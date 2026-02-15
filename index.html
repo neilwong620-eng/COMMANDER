@@ -3,93 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commander | 實戰指揮中心</title>
+    <title>Commander | 2倍資產翻倍計畫</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary-blue: #2c3e50; --accent-blue: #3498db; --bg-gray: #f8f9fa; --card-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-gray); color: var(--primary-blue); margin: 0; padding: 20px; font-size: 0.85rem; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-gray); color: var(--primary-blue); margin: 0; padding: 20px; font-size: 0.85rem; }
         .wrapper { max-width: 1600px; margin: auto; }
         
-        /* 橫向三欄精確對齊 */
-        .main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: stretch; }
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; min-height: 400px; }
-        h2 { margin-top: 0; font-size: 1rem; border-left: 4px solid var(--accent-blue); padding-left: 10px; margin-bottom: 20px; }
+        /* 第一橫排對齊設定 */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; }
+        h2 { margin-top: 0; font-size: 1rem; border-left: 4px solid var(--accent-blue); padding-left: 10px; margin-bottom: 15px; }
         
-        input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; font-size: 0.95rem; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 0.95rem; }
         .total-display { background: var(--primary-blue); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
-        .total-amount { font-size: 1.8rem; font-weight: 800; display: block; }
+        .total-amount { font-size: 1.6rem; font-weight: 800; display: block; }
         
-        .chart-container { height: 180px; margin-bottom: 15px; position: relative; }
-        .exp-list { max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
-        .exp-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #f0f0f0; font-size: 0.85rem; }
+        .chart-container { height: 160px; margin-bottom: 10px; }
+        .exp-list { max-height: 100px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 5px; }
+        .exp-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #f0f0f0; }
+
+        /* 第二排：目標翻倍區 */
+        .target-section { grid-column: span 3; background: #eef2f7; border: 2px solid var(--primary-blue); border-radius: 16px; padding: 25px; margin-top: 10px; }
+        .target-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        .progress-circle { display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; border-radius: 12px; padding: 20px; border: 1px solid #d1d9e6; }
+        .advice-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #d1d9e6; }
         
-        .suggestion-box { background: #f0f7ff; border-radius: 10px; padding: 15px; border: 1px dashed var(--accent-blue); font-size: 0.85rem; }
-        .news-item { border-bottom: 1px solid #f0f0f0; padding: 10px 0; font-size: 0.85rem; }
+        .suggestion-box { background: #f0f7ff; border-radius: 10px; padding: 12px; border: 1px dashed var(--accent-blue); font-size: 0.8rem; }
+        .news-item { border-bottom: 1px solid #f0f0f0; padding: 8px 0; }
         .news-item a { color: var(--accent-blue); text-decoration: none; font-weight: 600; }
-        button { cursor: pointer; transition: opacity 0.2s; border: none; font-weight: bold; }
-        button:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <header style="text-align:center; margin-bottom:30px;">
-        <h1 style="margin:0; font-size: 1.8rem;">COMMANDER</h1>
-        <p style="opacity:0.7; margin: 5px 0;">學生生存 ╳ 創業智庫 ╳ 標的監控</p>
+    <header style="text-align:center; margin-bottom:20px;">
+        <h1 style="margin:0; font-size: 1.5rem;">COMMANDER 11.5</h1>
+        <p style="opacity:0.7;">實戰指揮 ╳ 自動扣款 ╳ 資產翻倍目標</p>
     </header>
 
     <div class="main-grid">
         <div class="card">
-            <h2>💰 帳戶資產 (自動扣款)</h2>
+            <h2>💰 帳戶餘額 (自動扣款)</h2>
             <div style="display: flex; gap: 5px;">
-                <input type="number" id="bank1" placeholder="銀行 01" oninput="calculateAll()">
-                <input type="number" id="bank2" placeholder="銀行 02" oninput="calculateAll()">
-                <input type="number" id="bank3" placeholder="銀行 03" oninput="calculateAll()">
+                <input type="number" id="bank1" placeholder="B1" oninput="calculateAll()">
+                <input type="number" id="bank2" placeholder="B2" oninput="calculateAll()">
+                <input type="number" id="bank3" placeholder="B3" oninput="calculateAll()">
             </div>
             <div style="display: flex; gap: 5px;">
-                <input type="number" id="forex-bal" placeholder="外幣餘額" oninput="calculateAll()">
-                <select id="currency-type" onchange="calculateAll()" style="width: 90px;">
+                <input type="number" id="forex-bal" placeholder="外幣" oninput="calculateAll()">
+                <select id="currency-type" onchange="calculateAll()" style="width: 80px;">
                     <option value="EUR">EUR</option><option value="JPY">JPY</option><option value="USD">USD</option>
                 </select>
             </div>
-
             <div class="total-display">
                 <span id="total-val" class="total-amount">NT$ 0</span>
-                <div id="rent-info" style="font-size: 0.75rem; opacity: 0.8; margin-top: 5px;">房租 $6,500 | 淨資產計算中</div>
+                <div id="rent-info" style="font-size: 0.7rem; opacity: 0.8;">房租 $6,500 | 淨資產計算中</div>
             </div>
-
             <div class="chart-container"><canvas id="allocationChart"></canvas></div>
-
-            <h3 style="font-size:0.9rem; margin: 10px 0 8px 0;">📝 今日消費扣款</h3>
+            <h3 style="font-size:0.8rem; margin: 10px 0 5px 0;">📝 今日消費扣款</h3>
             <div style="display:flex; gap:5px;">
                 <input type="text" id="exp-name" placeholder="項目" style="flex:2;">
                 <input type="number" id="exp-amt" placeholder="金額" style="flex:1;">
-                <button onclick="addExpense()" style="width:50px; height:43px; border-radius:8px; background:var(--accent-blue); color:white;">+</button>
+                <button onclick="addExpense()" style="width:40px; height:38px; border-radius:8px; border:none; background:var(--accent-blue); color:white;">+</button>
             </div>
             <div id="exp-list" class="exp-list"></div>
         </div>
 
         <div class="card">
             <h2>🚀 銷售戰略智庫</h2>
-            <textarea id="product-desc" rows="4" placeholder="產品內容物描述 (例如：自製貼紙 150元組合)" oninput="analyzeSales()"></textarea>
+            <textarea id="product-desc" rows="3" placeholder="內容物描述" oninput="analyzeSales()"></textarea>
             <div style="display: flex; gap: 5px;">
-                <input type="number" id="cost-input" placeholder="採購成本" oninput="analyzeSales()">
-                <input type="number" id="target-price" placeholder="預期售價" oninput="analyzeSales()">
+                <input type="number" id="cost-input" placeholder="成本" oninput="analyzeSales()">
+                <input type="number" id="target-price" placeholder="售價" oninput="analyzeSales()">
             </div>
-            <div id="sales-result" class="suggestion-box" style="display:none; flex-grow: 1;"></div>
-            <div style="margin-top:20px; font-size:0.85rem; color:#666; border-top: 1px solid #eee; padding-top: 15px;">
-                💡 <b>生存指南：</b><br>
-                每一筆貼紙的利潤，都是在為你下一口呼吸（房租）爭取空間。
+            <div id="sales-result" class="suggestion-box" style="display:none; height: 100%;"></div>
+            <div style="margin-top:auto; font-size:0.8rem; color:#666; padding-top:10px;">
+                💡 淨利滾入投資，是資產翻倍的最快路徑。
             </div>
         </div>
 
         <div class="card">
-            <h2>📈 標的搜尋與即時快訊</h2>
-            <input type="text" id="stock-search" placeholder="搜尋 0056, 00981, NVDA..." oninput="searchStock()">
-            <div id="stock-advice" class="suggestion-box" style="display:none; margin-bottom: 15px;"></div>
-            
-            <div id="news-container" style="max-height: 500px; overflow-y: auto;">
-                <div class="news-item">正在同步快訊...</div>
+            <h2>📈 標的搜尋與快訊</h2>
+            <input type="text" id="stock-search" placeholder="搜尋代碼 (0056, 00981...)" oninput="searchStock()">
+            <div id="stock-advice" class="suggestion-box" style="display:none; margin-bottom: 10px;"></div>
+            <div id="news-container" style="max-height: 400px; overflow-y: auto;">
+                <div class="news-item">同步最新財經快訊...</div>
+            </div>
+        </div>
+
+        <div class="target-section">
+            <h2 style="border-left-color: var(--primary-blue);">🎯 2倍資產翻倍進度 (目標: NT$ <span id="target-goal-text">0</span>)</h2>
+            <div class="target-grid">
+                <div class="progress-circle">
+                    <span style="font-size: 1rem; color: #666;">目前達成率</span>
+                    <span id="target-percent" style="font-size: 2.5rem; font-weight: 800; color: var(--accent-blue);">0%</span>
+                    <span id="target-diff" style="font-size: 0.85rem; color: #e74c3c; margin-top: 10px;">還差 $0</span>
+                </div>
+                <div class="advice-box">
+                    <b style="font-size: 1.1rem; color: var(--primary-blue);">🚀 翻倍戰略建議：</b>
+                    <div id="target-advice-text" style="margin-top: 10px; line-height: 1.6; font-size: 0.95rem;">
+                        請在上方輸入資產，系統將為你規劃 2 倍翻倍路徑。
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -99,32 +115,7 @@
     let currentRates = { EUR: 34.5, JPY: 0.21, USD: 31.5 };
     let expenses = [];
     let myChart;
-
-    // 確保圖表正確初始化
-    function initChart() {
-        const ctx = document.getElementById('allocationChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['房租(固定)', '穩健投資', '獵貨資金', '剩餘現金'],
-                datasets: [{ data: [6500, 0, 0, 0], backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'], borderWidth: 0 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
-        });
-    }
-
-    async function fetchRates() {
-        try {
-            const res = await fetch('https://open.er-api.com/v6/latest/TWD');
-            const data = await res.json();
-            currentRates.EUR = 1/data.rates.EUR; currentRates.JPY = 1/data.rates.JPY; currentRates.USD = 1/data.rates.USD;
-            calculateAll();
-        } catch (e) {
-            console.error("Rate fetch failed");
-            calculateAll();
-        }
-    }
+    let netGlobal = 0;
 
     function calculateAll() {
         const b1 = parseFloat(document.getElementById('bank1').value) || 0;
@@ -132,57 +123,63 @@
         const b3 = parseFloat(document.getElementById('bank3').value) || 0;
         const forex = parseFloat(document.getElementById('forex-bal').value) || 0;
         const currType = document.getElementById('currency-type').value;
-        
         const gross = b1 + b2 + b3 + (forex * currentRates[currType]);
-        const totalExp = expenses.reduce((sum, item) => sum + item.amt, 0);
-        const net = gross - totalExp;
+        const totalExp = expenses.reduce((s, i) => s + i.amt, 0);
+        netGlobal = gross - totalExp;
         
-        document.getElementById('total-val').innerText = 'NT$ ' + net.toLocaleString();
-        const rentP = net > 0 ? ((6500 / net) * 100).toFixed(1) : 0;
+        document.getElementById('total-val').innerText = 'NT$ ' + netGlobal.toLocaleString();
+        const rentP = netGlobal > 0 ? ((6500 / netGlobal) * 100).toFixed(1) : 0;
         document.getElementById('rent-info').innerText = `房租 $6,500 | 佔淨資產 ${rentP}%`;
 
+        // 更新翻倍目標邏輯 (以 20 萬為基準或目前資產的 2 倍)
+        const targetGoal = 200000; // 你設定的基準目標
+        const flipGoal = targetGoal * 2;
+        document.getElementById('target-goal-text').innerText = flipGoal.toLocaleString();
+        
+        const progress = Math.min(100, (netGlobal / flipGoal) * 100).toFixed(1);
+        document.getElementById('target-percent').innerText = progress + '%';
+        document.getElementById('target-diff').innerText = `還差 $${Math.max(0, flipGoal - netGlobal).toLocaleString()}`;
+        
+        // 戰略建議
+        const advice = document.getElementById('target-advice-text');
+        if (netGlobal < targetGoal) {
+            advice.innerHTML = "<b>階段 1：原始積累。</b><br>重點在於『主動收入』。利用你的貼紙生意賺取每筆 150 元的利潤。這筆錢不要亂花，扣掉房租後全部投入 0056。";
+        } else if (netGlobal < flipGoal) {
+            advice.innerHTML = "<b>階段 2：複利加速。</b><br>目前資產已達標。建議將 50% 放入 00981 (日本領航) 或 0050，利用市場波動與配置縮短翻倍時間。繼續保持每日開銷監控。";
+        } else {
+            advice.innerHTML = "<b>階段 3：資產重組。</b><br>恭喜翻倍！現在應重新設定目標。建議將部分資金轉入外幣避險，或尋找下一波樂高稀缺貨源。";
+        }
+
         if (myChart) {
-            const investable = Math.max(0, net - 6500);
-            myChart.data.datasets[0].data = [6500, investable * 0.5, investable * 0.3, investable * 0.2];
+            const invest = Math.max(0, netGlobal - 6500);
+            myChart.data.datasets[0].data = [6500, invest * 0.5, invest * 0.3, invest * 0.2];
             myChart.update();
         }
-        localStorage.setItem('commander_data_final', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
+        localStorage.setItem('cmd_flip_data', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
     }
 
     function addExpense() {
-        const nameInput = document.getElementById('exp-name');
-        const amtInput = document.getElementById('exp-amt');
-        const name = nameInput.value;
-        const amt = parseFloat(amtInput.value);
+        const name = document.getElementById('exp-name').value;
+        const amt = parseFloat(document.getElementById('exp-amt').value);
         if (name && amt) {
             expenses.unshift({name, amt, time: new Date().toLocaleTimeString()});
-            nameInput.value = ''; amtInput.value = '';
+            document.getElementById('exp-name').value = ''; document.getElementById('exp-amt').value = '';
             renderExpenses(); calculateAll();
         }
     }
-
     function renderExpenses() {
-        document.getElementById('exp-list').innerHTML = expenses.map((item, index) => `
-            <div class="exp-item">
-                <span>${item.name} <small style="color:#999">${item.time}</small></span>
-                <b>$${item.amt} <span style="cursor:pointer;color:red" onclick="removeExp(${index})">×</span></b>
-            </div>
+        document.getElementById('exp-list').innerHTML = expenses.map((i, idx) => `
+            <div class="exp-item"><span>${i.name}</span><b>$${i.amt} <span onclick="removeExp(${idx})" style="color:red;cursor:pointer">×</span></b></div>
         `).join('');
     }
-
     function removeExp(i) { expenses.splice(i, 1); renderExpenses(); calculateAll(); }
 
     function searchStock() {
         const s = document.getElementById('stock-search').value.toUpperCase();
         const box = document.getElementById('stock-advice');
         box.style.display = s ? 'block' : 'none';
-        const db = {
-            '0056': '<b>0056 元大高股息：</b>穩定配息，協助支付 $6,500 房租。',
-            '00981': '<b>00981 復華日本領航：</b>聚焦日本半導體。',
-            '0050': '<b>0050 元大台灣50：</b>利潤存放首選。',
-            'NVDA': '<b>NVDA 輝達：</b>AI 成長龍頭，波動較大。'
-        };
-        box.innerHTML = db[s] || `分析中：建議搜尋 0056, 00981 或 0050。`;
+        const db = { '0056': '0056：穩定配息，資產翻倍的防守墊。', '00981': '00981：日股動能強，是加速翻倍的進攻標的。', '0050': '0050：台股基石。' };
+        box.innerHTML = db[s] || `分析中...`;
     }
 
     function analyzeSales() {
@@ -192,32 +189,28 @@
         const box = document.getElementById('sales-result');
         if (!desc && !cost && !price) { box.style.display = 'none'; return; }
         box.style.display = 'block';
-        let res = `<b>利潤分析：</b>獲利 $${(price-cost).toFixed(0)} | 毛利率 ${(((price-cost)/price)*100).toFixed(1)}%<br>`;
-        if (desc.includes("貼紙") && price >= 150) res += "💡 <b>建議：</b>單筆利潤亮眼。建議強化設計理念以支撐溢價。";
-        box.innerHTML = res;
+        box.innerHTML = `獲利：$${price-cost} | 這是你邁向翻倍計畫的微小推進。`;
     }
 
     async function fetchNews() {
         try {
             const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://tw.news.yahoo.com/rss/finance');
             const data = await res.json();
-            document.getElementById('news-container').innerHTML = data.items.slice(0, 10).map(i => `<div class="news-item"><a href="${i.link}" target="_blank">${i.title}</a></div>`).join('');
+            document.getElementById('news-container').innerHTML = data.items.slice(0, 8).map(i => `<div class="news-item"><a href="${i.link}" target="_blank">${i.title}</a></div>`).join('');
         } catch (e) {}
     }
 
-    // 初始化啟動
     window.onload = function() {
-        initChart();
-        const saved = JSON.parse(localStorage.getItem('commander_data_final') || '{}');
+        const ctx = document.getElementById('allocationChart').getContext('2d');
+        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['房租', '投資', '獵貨', '剩餘'], datasets: [{ data: [6500, 0, 0, 0], backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } } });
+        const saved = JSON.parse(localStorage.getItem('cmd_flip_data') || '{}');
         document.getElementById('bank1').value = saved.b1 || '';
         document.getElementById('bank2').value = saved.b2 || '';
         document.getElementById('bank3').value = saved.b3 || '';
         document.getElementById('forex-bal').value = saved.forex || '';
         document.getElementById('currency-type').value = saved.currType || 'EUR';
         expenses = saved.expenses || [];
-        renderExpenses(); 
-        fetchRates(); 
-        fetchNews();
+        renderExpenses(); calculateAll(); fetchNews();
     };
 </script>
 </body>
