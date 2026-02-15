@@ -11,22 +11,22 @@
         .wrapper { max-width: 1600px; margin: auto; }
         
         /* 橫向三欄精確對齊 */
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; }
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; }
+        .main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: stretch; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; min-height: 400px; }
         h2 { margin-top: 0; font-size: 1rem; border-left: 4px solid var(--accent-blue); padding-left: 10px; margin-bottom: 20px; }
         
         input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; font-size: 0.95rem; }
         .total-display { background: var(--primary-blue); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
         .total-amount { font-size: 1.8rem; font-weight: 800; display: block; }
         
-        .chart-container { height: 180px; margin-bottom: 15px; }
+        .chart-container { height: 180px; margin-bottom: 15px; position: relative; }
         .exp-list { max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
         .exp-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #f0f0f0; font-size: 0.85rem; }
         
         .suggestion-box { background: #f0f7ff; border-radius: 10px; padding: 15px; border: 1px dashed var(--accent-blue); font-size: 0.85rem; }
         .news-item { border-bottom: 1px solid #f0f0f0; padding: 10px 0; font-size: 0.85rem; }
         .news-item a { color: var(--accent-blue); text-decoration: none; font-weight: 600; }
-        button { cursor: pointer; transition: opacity 0.2s; }
+        button { cursor: pointer; transition: opacity 0.2s; border: none; font-weight: bold; }
         button:hover { opacity: 0.8; }
     </style>
 </head>
@@ -55,7 +55,7 @@
 
             <div class="total-display">
                 <span id="total-val" class="total-amount">NT$ 0</span>
-                <div id="rent-info" style="font-size: 0.75rem; opacity: 0.8; margin-top: 5px;">房租 $6,500 佔淨資產 --%</div>
+                <div id="rent-info" style="font-size: 0.75rem; opacity: 0.8; margin-top: 5px;">房租 $6,500 | 淨資產計算中</div>
             </div>
 
             <div class="chart-container"><canvas id="allocationChart"></canvas></div>
@@ -64,7 +64,7 @@
             <div style="display:flex; gap:5px;">
                 <input type="text" id="exp-name" placeholder="項目" style="flex:2;">
                 <input type="number" id="exp-amt" placeholder="金額" style="flex:1;">
-                <button onclick="addExpense()" style="width:50px; height:43px; border-radius:8px; border:none; background:var(--accent-blue); color:white; font-weight:bold;">+</button>
+                <button onclick="addExpense()" style="width:50px; height:43px; border-radius:8px; background:var(--accent-blue); color:white;">+</button>
             </div>
             <div id="exp-list" class="exp-list"></div>
         </div>
@@ -89,7 +89,7 @@
             <div id="stock-advice" class="suggestion-box" style="display:none; margin-bottom: 15px;"></div>
             
             <div id="news-container" style="max-height: 500px; overflow-y: auto;">
-                <div class="news-item">正在同步 Yahoo 財經中文快訊...</div>
+                <div class="news-item">正在同步快訊...</div>
             </div>
         </div>
     </div>
@@ -100,8 +100,10 @@
     let expenses = [];
     let myChart;
 
+    // 確保圖表正確初始化
     function initChart() {
         const ctx = document.getElementById('allocationChart').getContext('2d');
+        if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -118,7 +120,10 @@
             const data = await res.json();
             currentRates.EUR = 1/data.rates.EUR; currentRates.JPY = 1/data.rates.JPY; currentRates.USD = 1/data.rates.USD;
             calculateAll();
-        } catch (e) {}
+        } catch (e) {
+            console.error("Rate fetch failed");
+            calculateAll();
+        }
     }
 
     function calculateAll() {
@@ -141,15 +146,17 @@
             myChart.data.datasets[0].data = [6500, investable * 0.5, investable * 0.3, investable * 0.2];
             myChart.update();
         }
-        localStorage.setItem('cmd_final_v1', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
+        localStorage.setItem('commander_data_final', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
     }
 
     function addExpense() {
-        const name = document.getElementById('exp-name').value;
-        const amt = parseFloat(document.getElementById('exp-amt').value);
+        const nameInput = document.getElementById('exp-name');
+        const amtInput = document.getElementById('exp-amt');
+        const name = nameInput.value;
+        const amt = parseFloat(amtInput.value);
         if (name && amt) {
             expenses.unshift({name, amt, time: new Date().toLocaleTimeString()});
-            document.getElementById('exp-name').value = ''; document.getElementById('exp-amt').value = '';
+            nameInput.value = ''; amtInput.value = '';
             renderExpenses(); calculateAll();
         }
     }
@@ -170,9 +177,10 @@
         const box = document.getElementById('stock-advice');
         box.style.display = s ? 'block' : 'none';
         const db = {
-            '0056': '<b>0056 元大高股息：</b>穩定配息，協助支付 $6,500 房租支出。',
-            '00981': '<b>00981 復華日本領航：</b>2/3上市標的，觀察日企半導體動能。',
-            '0050': '<b>0050 元大台灣50：</b>利潤長期存放的首選。'
+            '0056': '<b>0056 元大高股息：</b>穩定配息，協助支付 $6,500 房租。',
+            '00981': '<b>00981 復華日本領航：</b>聚焦日本半導體。',
+            '0050': '<b>0050 元大台灣50：</b>利潤存放首選。',
+            'NVDA': '<b>NVDA 輝達：</b>AI 成長龍頭，波動較大。'
         };
         box.innerHTML = db[s] || `分析中：建議搜尋 0056, 00981 或 0050。`;
     }
@@ -184,8 +192,8 @@
         const box = document.getElementById('sales-result');
         if (!desc && !cost && !price) { box.style.display = 'none'; return; }
         box.style.display = 'block';
-        let res = `<b>利潤分析：</b>獲利 $${price-cost} | 毛利率 ${(((price-cost)/price)*100).toFixed(1)}%<br>`;
-        if (desc.includes("貼紙") && price >= 150) res += "💡 <b>建議：</b>高毛利產品。此單利潤可抵銷約一天的生活雜支。";
+        let res = `<b>利潤分析：</b>獲利 $${(price-cost).toFixed(0)} | 毛利率 ${(((price-cost)/price)*100).toFixed(1)}%<br>`;
+        if (desc.includes("貼紙") && price >= 150) res += "💡 <b>建議：</b>單筆利潤亮眼。建議強化設計理念以支撐溢價。";
         box.innerHTML = res;
     }
 
@@ -197,16 +205,19 @@
         } catch (e) {}
     }
 
+    // 初始化啟動
     window.onload = function() {
         initChart();
-        const saved = JSON.parse(localStorage.getItem('cmd_final_v1') || '{}');
+        const saved = JSON.parse(localStorage.getItem('commander_data_final') || '{}');
         document.getElementById('bank1').value = saved.b1 || '';
         document.getElementById('bank2').value = saved.b2 || '';
         document.getElementById('bank3').value = saved.b3 || '';
         document.getElementById('forex-bal').value = saved.forex || '';
         document.getElementById('currency-type').value = saved.currType || 'EUR';
         expenses = saved.expenses || [];
-        renderExpenses(); fetchRates(); fetchNews();
+        renderExpenses(); 
+        fetchRates(); 
+        fetchNews();
     };
 </script>
 </body>
