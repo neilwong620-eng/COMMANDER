@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commander | 實戰指揮中心</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary-blue: #2c3e50; --accent-blue: #3498db; --bg-gray: #f8f9fa; --card-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-gray); color: var(--primary-blue); margin: 0; padding: 20px; font-size: 0.85rem; }
+        .wrapper { max-width: 1600px; margin: auto; }
+        
+        /* 橫向三欄精確對齊 */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; }
+        h2 { margin-top: 0; font-size: 1rem; border-left: 4px solid var(--accent-blue); padding-left: 10px; margin-bottom: 20px; }
+        
+        input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; font-size: 0.95rem; }
+        .total-display { background: var(--primary-blue); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+        .total-amount { font-size: 1.8rem; font-weight: 800; display: block; }
+        
+        .chart-container { height: 180px; margin-bottom: 15px; }
+        .exp-list { max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .exp-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #f0f0f0; font-size: 0.85rem; }
+        
+        .suggestion-box { background: #f0f7ff; border-radius: 10px; padding: 15px; border: 1px dashed var(--accent-blue); font-size: 0.85rem; }
+        .news-item { border-bottom: 1px solid #f0f0f0; padding: 10px 0; font-size: 0.85rem; }
+        .news-item a { color: var(--accent-blue); text-decoration: none; font-weight: 600; }
+        button { cursor: pointer; transition: opacity 0.2s; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header style="text-align:center; margin-bottom:30px;">
+        <h1 style="margin:0; font-size: 1.8rem;">COMMANDER</h1>
+        <p style="opacity:0.7; margin: 5px 0;">學生生存 ╳ 創業智庫 ╳ 標的監控</p>
+    </header>
+
+    <div class="main-grid">
+        <div class="card">
+            <h2>💰 帳戶資產 (自動扣款)</h2>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="bank1" placeholder="銀行 01" oninput="calculateAll()">
+                <input type="number" id="bank2" placeholder="銀行 02" oninput="calculateAll()">
+                <input type="number" id="bank3" placeholder="銀行 03" oninput="calculateAll()">
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="forex-bal" placeholder="外幣餘額" oninput="calculateAll()">
+                <select id="currency-type" onchange="calculateAll()" style="width: 90px;">
+                    <option value="EUR">EUR</option><option value="JPY">JPY</option><option value="USD">USD</option>
+                </select>
+            </div>
+
+            <div class="total-display">
+                <span id="total-val" class="total-amount">NT$ 0</span>
+                <div id="rent-info" style="font-size: 0.75rem; opacity: 0.8; margin-top: 5px;">房租 $6,500 佔淨資產 --%</div>
+            </div>
+
+            <div class="chart-container"><canvas id="allocationChart"></canvas></div>
+
+            <h3 style="font-size:0.9rem; margin: 10px 0 8px 0;">📝 今日消費扣款</h3>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="exp-name" placeholder="項目" style="flex:2;">
+                <input type="number" id="exp-amt" placeholder="金額" style="flex:1;">
+                <button onclick="addExpense()" style="width:50px; height:43px; border-radius:8px; border:none; background:var(--accent-blue); color:white; font-weight:bold;">+</button>
+            </div>
+            <div id="exp-list" class="exp-list"></div>
+        </div>
+
+        <div class="card">
+            <h2>🚀 銷售戰略智庫</h2>
+            <textarea id="product-desc" rows="4" placeholder="產品內容物描述 (例如：自製貼紙 150元組合)" oninput="analyzeSales()"></textarea>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="cost-input" placeholder="採購成本" oninput="analyzeSales()">
+                <input type="number" id="target-price" placeholder="預期售價" oninput="analyzeSales()">
+            </div>
+            <div id="sales-result" class="suggestion-box" style="display:none; flex-grow: 1;"></div>
+            <div style="margin-top:20px; font-size:0.85rem; color:#666; border-top: 1px solid #eee; padding-top: 15px;">
+                💡 <b>生存指南：</b><br>
+                每一筆貼紙的利潤，都是在為你下一口呼吸（房租）爭取空間。
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📈 標的搜尋與即時快訊</h2>
+            <input type="text" id="stock-search" placeholder="搜尋 0056, 00981, NVDA..." oninput="searchStock()">
+            <div id="stock-advice" class="suggestion-box" style="display:none; margin-bottom: 15px;"></div>
+            
+            <div id="news-container" style="max-height: 500px; overflow-y: auto;">
+                <div class="news-item">正在同步 Yahoo 財經中文快訊...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRates = { EUR: 34.5, JPY: 0.21, USD: 31.5 };
+    let expenses = [];
+    let myChart;
+
+    function initChart() {
+        const ctx = document.getElementById('allocationChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['房租(固定)', '穩健投資', '獵貨資金', '剩餘現金'],
+                datasets: [{ data: [6500, 0, 0, 0], backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+        });
+    }
+
+    async function fetchRates() {
+        try {
+            const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+            const data = await res.json();
+            currentRates.EUR = 1/data.rates.EUR; currentRates.JPY = 1/data.rates.JPY; currentRates.USD = 1/data.rates.USD;
+            calculateAll();
+        } catch (e) {}
+    }
+
+    function calculateAll() {
+        const b1 = parseFloat(document.getElementById('bank1').value) || 0;
+        const b2 = parseFloat(document.getElementById('bank2').value) || 0;
+        const b3 = parseFloat(document.getElementById('bank3').value) || 0;
+        const forex = parseFloat(document.getElementById('forex-bal').value) || 0;
+        const currType = document.getElementById('currency-type').value;
+        
+        const gross = b1 + b2 + b3 + (forex * currentRates[currType]);
+        const totalExp = expenses.reduce((sum, item) => sum + item.amt, 0);
+        const net = gross - totalExp;
+        
+        document.getElementById('total-val').innerText = 'NT$ ' + net.toLocaleString();
+        const rentP = net > 0 ? ((6500 / net) * 100).toFixed(1) : 0;
+        document.getElementById('rent-info').innerText = `房租 $6,500 | 佔淨資產 ${rentP}%`;
+
+        if (myChart) {
+            const investable = Math.max(0, net - 6500);
+            myChart.data.datasets[0].data = [6500, investable * 0.5, investable * 0.3, investable * 0.2];
+            myChart.update();
+        }
+        localStorage.setItem('cmd_final_v1', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
+    }
+
+    function addExpense() {
+        const name = document.getElementById('exp-name').value;
+        const amt = parseFloat(document.getElementById('exp-amt').value);
+        if (name && amt) {
+            expenses.unshift({name, amt, time: new Date().toLocaleTimeString()});
+            document.getElementById('exp-name').value = ''; document.getElementById('exp-amt').value = '';
+            renderExpenses(); calculateAll();
+        }
+    }
+
+    function renderExpenses() {
+        document.getElementById('exp-list').innerHTML = expenses.map((item, index) => `
+            <div class="exp-item">
+                <span>${item.name} <small style="color:#999">${item.time}</small></span>
+                <b>$${item.amt} <span style="cursor:pointer;color:red" onclick="removeExp(${index})">×</span></b>
+            </div>
+        `).join('');
+    }
+
+    function removeExp(i) { expenses.splice(i, 1); renderExpenses(); calculateAll(); }
+
+    function searchStock() {
+        const s = document.getElementById('stock-search').value.toUpperCase();
+        const box = document.getElementById('stock-advice');
+        box.style.display = s ? 'block' : 'none';
+        const db = {
+            '0056': '<b>0056 元大高股息：</b>穩定配息，協助支付 $6,500 房租支出。',
+            '00981': '<b>00981 復華日本領航：</b>2/3上市標的，觀察日企半導體動能。',
+            '0050': '<b>0050 元大台灣50：</b>利潤長期存放的首選。'
+        };
+        box.innerHTML = db[s] || `分析中：建議搜尋 0056, 00981 或 0050。`;
+    }
+
+    function analyzeSales() {
+        const desc = document.getElementById('product-desc').value;
+        const cost = parseFloat(document.getElementById('cost-input').value) || 0;
+        const price = parseFloat(document.getElementById('target-price').value) || 0;
+        const box = document.getElementById('sales-result');
+        if (!desc && !cost && !price) { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        let res = `<b>利潤分析：</b>獲利 $${price-cost} | 毛利率 ${(((price-cost)/price)*100).toFixed(1)}%<br>`;
+        if (desc.includes("貼紙") && price >= 150) res += "💡 <b>建議：</b>高毛利產品。此單利潤可抵銷約一天的生活雜支。";
+        box.innerHTML = res;
+    }
+
+    async function fetchNews() {
+        try {
+            const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://tw.news.yahoo.com/rss/finance');
+            const data = await res.json();
+            document.getElementById('news-container').innerHTML = data.items.slice(0, 10).map(i => `<div class="news-item"><a href="${i.link}" target="_blank">${i.title}</a></div>`).join('');
+        } catch (e) {}
+    }
+
+    window.onload = function() {
+        initChart();
+        const saved = JSON.parse(localStorage.getItem('cmd_final_v1') || '{}');
+        document.getElementById('bank1').value = saved.b1 || '';
+        document.getElementById('bank2').value = saved.b2 || '';
+        document.getElementById('bank3').value = saved.b3 || '';
+        document.getElementById('forex-bal').value = saved.forex || '';
+        document.getElementById('currency-type').value = saved.currType || 'EUR';
+        expenses = saved.expenses || [];
+        renderExpenses(); fetchRates(); fetchNews();
+    };
+</script>
+</body>
+</html>
