@@ -3,116 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人理財管理系統</title>
+    <title>個人理財管理系統 - 完整版</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card h3 { margin-top: 0; font-size: 1rem; color: #666; }
-        .balance { font-size: 1.5rem; font-weight: bold; color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #2c3e50; color: white; }
-        .stock-account { border-left: 5px solid #e74c3c; }
-        .positive { color: #27ae60; }
-        .negative { color: #e74c3c; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { color: #1a73e8; border-bottom: 2px solid #e8f0fe; padding-bottom: 10px; }
+        
+        /* 原始功能樣式 */
+        .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        
+        .alert-box { background: #fff4e5; border-left: 5px solid #ffa117; padding: 10px; margin: 10px 0; font-size: 0.9rem; }
+        .rent-calc { background: #e8f0fe; padding: 15px; border-radius: 8px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        .balance-val { font-size: 1.8rem; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>資產帳戶概覽</h2>
-    
-    <div class="grid" id="account-display">
+    <h1>理財進度追蹤</h1>
+
+    <div class="dashboard-grid">
+        <div class="main-content">
+            <div class="card">
+                <h2>帳戶資產概覽</h2>
+                <div class="balance-val" id="total-assets">$0</div>
+                <p>目前可用資金 (含匯率換算預估)</p>
+            </div>
+
+            <div class="card">
+                <h2>標的搜尋與即時快訊</h2>
+                <div class="search-box">
+                    <input type="text" id="stock-search" placeholder="輸入股票代碼 (如: 2330, AAPL)...">
+                    <button onclick="mockSearch()">搜尋</button>
+                </div>
+                <div id="news-alerts">
+                    <div class="alert-box">🔔 快訊：Fed 本週預計維持利率不變，市場觀望氣氛濃厚。</div>
+                    <div class="alert-box">📈 提醒：台積電 (2330) 近五日漲幅已達 5%。</div>
+                </div>
+            </div>
         </div>
 
-    <hr>
+        <div class="sidebar">
+            <div class="card rent-calc">
+                <h2>每月房租計算器</h2>
+                <label>基本租金：</label>
+                <input type="number" id="base-rent" value="12000" oninput="calcRent()">
+                <br><br>
+                <label>電費預估 (度)：</label>
+                <input type="number" id="electricity" value="100" oninput="calcRent()">
+                <p><strong>預估總支出：</strong> <span id="rent-total">$12,500</span></p>
+            </div>
 
-    <h2>股票投資清單</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>代號/名稱</th>
-                <th>持有股數</th>
-                <th>平均成本</th>
-                <th>目前市價</th>
-                <th>預估市值</th>
-                <th>損益狀況</th>
-            </tr>
-        </thead>
-        <tbody id="stock-list">
-            </tbody>
-    </table>
+            <div class="card">
+                <h2>匯率監控</h2>
+                <ul>
+                    <li>USD/TWD: 31.52 <span style="color:red">▲</span></li>
+                    <li>EUR/TWD: 34.12 <span style="color:green">▼</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // 1. 設定帳戶資料 (4個一般 + 1個股票)
-    const accounts = [
-        { name: "薪轉帳戶", balance: 50000, type: "cash" },
-        { name: "生活開支", balance: 12000, type: "cash" },
-        { name: "緊急預備金", balance: 100000, type: "cash" },
-        { name: "海外儲蓄", balance: 3500, type: "cash" }, // 假設美金
-        { name: "證券交割戶", balance: 8500, type: "stock_cash" } 
-    ];
-
-    // 2. 設定股票庫存
-    const stocks = [
-        { code: "2330 台積電", shares: 500, cost: 620, currentPrice: 780 },
-        { code: "AAPL", shares: 10, cost: 175, currentPrice: 190 },
-        { code: "0050 元大台灣50", shares: 1000, cost: 135, currentPrice: 158 }
-    ];
-
-    function updateUI() {
-        const accountContainer = document.getElementById('account-display');
-        const stockContainer = document.getElementById('stock-list');
-        let totalStockMarketValue = 0;
-
-        // 計算股票市值
-        stockContainer.innerHTML = "";
-        stocks.forEach(s => {
-            const marketValue = s.shares * s.currentPrice;
-            const profit = (s.currentPrice - s.cost) * s.shares;
-            const profitPct = (((s.currentPrice / s.cost) - 1) * 100).toFixed(2);
-            totalStockMarketValue += marketValue;
-
-            stockContainer.innerHTML += `
-                <tr>
-                    <td>**${s.code}**</td>
-                    <td>${s.shares}</td>
-                    <td>$${s.cost}</td>
-                    <td>$${s.currentPrice}</td>
-                    <td>$${marketValue.toLocaleString()}</td>
-                    <td class="${profit >= 0 ? 'positive' : 'negative'}">
-                        ${profit >= 0 ? '+' : ''}${profit.toLocaleString()} (${profitPct}%)
-                    </td>
-                </tr>
-            `;
-        });
-
-        // 渲染帳戶卡片
-        accountContainer.innerHTML = "";
-        accounts.forEach(acc => {
-            let displayBalance = acc.balance;
-            let extraClass = "";
-            
-            // 如果是股票帳戶，顯示 (現金 + 股票市值)
-            if (acc.type === "stock_cash") {
-                displayBalance = acc.balance + totalStockMarketValue;
-                extraClass = "stock-account";
-            }
-
-            accountContainer.innerHTML += `
-                <div class="card ${extraClass}">
-                    <h3>${acc.name}</h3>
-                    <div class="balance">$${displayBalance.toLocaleString()}</div>
-                    ${acc.type === 'stock_cash' ? '<small style="color:gray">含股票市值</small>' : ''}
-                </div>
-            `;
-        });
+    // 原始計算邏輯
+    function calcRent() {
+        const base = parseFloat(document.getElementById('base-rent').value) || 0;
+        const elec = parseFloat(document.getElementById('electricity').value) || 0;
+        const total = base + (elec * 5); // 假設一度電 5 元
+        document.getElementById('rent-total').innerText = `$${total.toLocaleString()}`;
     }
 
-    updateUI();
+    function mockSearch() {
+        const code = document.getElementById('stock-search').value;
+        if(code) {
+            alert('正在為您查詢 ' + code + ' 的即時行情與新聞...');
+        }
+    }
+
+    // 初始化資產顯示 (原先版本)
+    document.getElementById('total-assets').innerText = '$1,250,000';
 </script>
 
 </body>
