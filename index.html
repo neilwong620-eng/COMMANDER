@@ -1,217 +1,119 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commander | 2倍資產翻倍計畫</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>個人理財管理系統</title>
     <style>
-        :root { --primary-blue: #2c3e50; --accent-blue: #3498db; --bg-gray: #f8f9fa; --card-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-gray); color: var(--primary-blue); margin: 0; padding: 20px; font-size: 0.85rem; }
-        .wrapper { max-width: 1600px; margin: auto; }
-        
-        /* 第一橫排對齊設定 */
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid #eee; display: flex; flex-direction: column; }
-        h2 { margin-top: 0; font-size: 1rem; border-left: 4px solid var(--accent-blue); padding-left: 10px; margin-bottom: 15px; }
-        
-        input, select, textarea { width: 100%; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 0.95rem; }
-        .total-display { background: var(--primary-blue); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
-        .total-amount { font-size: 1.6rem; font-weight: 800; display: block; }
-        
-        .chart-container { height: 160px; margin-bottom: 10px; }
-        .exp-list { max-height: 100px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 5px; }
-        .exp-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #f0f0f0; }
-
-        /* 第二排：目標翻倍區 */
-        .target-section { grid-column: span 3; background: #eef2f7; border: 2px solid var(--primary-blue); border-radius: 16px; padding: 25px; margin-top: 10px; }
-        .target-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
-        .progress-circle { display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; border-radius: 12px; padding: 20px; border: 1px solid #d1d9e6; }
-        .advice-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #d1d9e6; }
-        
-        .suggestion-box { background: #f0f7ff; border-radius: 10px; padding: 12px; border: 1px dashed var(--accent-blue); font-size: 0.8rem; }
-        .news-item { border-bottom: 1px solid #f0f0f0; padding: 8px 0; }
-        .news-item a { color: var(--accent-blue); text-decoration: none; font-weight: 600; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; font-size: 1rem; color: #666; }
+        .balance { font-size: 1.5rem; font-weight: bold; color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #2c3e50; color: white; }
+        .stock-account { border-left: 5px solid #e74c3c; }
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <header style="text-align:center; margin-bottom:20px;">
-        <h1 style="margin:0; font-size: 1.5rem;">COMMANDER 11.5</h1>
-        <p style="opacity:0.7;">實戰指揮 ╳ 自動扣款 ╳ 資產翻倍目標</p>
-    </header>
-
-    <div class="main-grid">
-        <div class="card">
-            <h2>💰 帳戶餘額 (自動扣款)</h2>
-            <div style="display: flex; gap: 5px;">
-                <input type="number" id="bank1" placeholder="B1" oninput="calculateAll()">
-                <input type="number" id="bank2" placeholder="B2" oninput="calculateAll()">
-                <input type="number" id="bank3" placeholder="B3" oninput="calculateAll()">
-            </div>
-            <div style="display: flex; gap: 5px;">
-                <input type="number" id="forex-bal" placeholder="外幣" oninput="calculateAll()">
-                <select id="currency-type" onchange="calculateAll()" style="width: 80px;">
-                    <option value="EUR">EUR</option><option value="JPY">JPY</option><option value="USD">USD</option>
-                </select>
-            </div>
-            <div class="total-display">
-                <span id="total-val" class="total-amount">NT$ 0</span>
-                <div id="rent-info" style="font-size: 0.7rem; opacity: 0.8;">房租 $6,500 | 淨資產計算中</div>
-            </div>
-            <div class="chart-container"><canvas id="allocationChart"></canvas></div>
-            <h3 style="font-size:0.8rem; margin: 10px 0 5px 0;">📝 今日消費扣款</h3>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="exp-name" placeholder="項目" style="flex:2;">
-                <input type="number" id="exp-amt" placeholder="金額" style="flex:1;">
-                <button onclick="addExpense()" style="width:40px; height:38px; border-radius:8px; border:none; background:var(--accent-blue); color:white;">+</button>
-            </div>
-            <div id="exp-list" class="exp-list"></div>
+<div class="container">
+    <h2>資產帳戶概覽</h2>
+    
+    <div class="grid" id="account-display">
         </div>
 
-        <div class="card">
-            <h2>🚀 銷售戰略智庫</h2>
-            <textarea id="product-desc" rows="3" placeholder="內容物描述" oninput="analyzeSales()"></textarea>
-            <div style="display: flex; gap: 5px;">
-                <input type="number" id="cost-input" placeholder="成本" oninput="analyzeSales()">
-                <input type="number" id="target-price" placeholder="售價" oninput="analyzeSales()">
-            </div>
-            <div id="sales-result" class="suggestion-box" style="display:none; height: 100%;"></div>
-            <div style="margin-top:auto; font-size:0.8rem; color:#666; padding-top:10px;">
-                💡 淨利滾入投資，是資產翻倍的最快路徑。
-            </div>
-        </div>
+    <hr>
 
-        <div class="card">
-            <h2>📈 標的搜尋與快訊</h2>
-            <input type="text" id="stock-search" placeholder="搜尋代碼 (0056, 00981...)" oninput="searchStock()">
-            <div id="stock-advice" class="suggestion-box" style="display:none; margin-bottom: 10px;"></div>
-            <div id="news-container" style="max-height: 400px; overflow-y: auto;">
-                <div class="news-item">同步最新財經快訊...</div>
-            </div>
-        </div>
-
-        <div class="target-section">
-            <h2 style="border-left-color: var(--primary-blue);">🎯 2倍資產翻倍進度 (目標: NT$ <span id="target-goal-text">0</span>)</h2>
-            <div class="target-grid">
-                <div class="progress-circle">
-                    <span style="font-size: 1rem; color: #666;">目前達成率</span>
-                    <span id="target-percent" style="font-size: 2.5rem; font-weight: 800; color: var(--accent-blue);">0%</span>
-                    <span id="target-diff" style="font-size: 0.85rem; color: #e74c3c; margin-top: 10px;">還差 $0</span>
-                </div>
-                <div class="advice-box">
-                    <b style="font-size: 1.1rem; color: var(--primary-blue);">🚀 翻倍戰略建議：</b>
-                    <div id="target-advice-text" style="margin-top: 10px; line-height: 1.6; font-size: 0.95rem;">
-                        請在上方輸入資產，系統將為你規劃 2 倍翻倍路徑。
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <h2>股票投資清單</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>代號/名稱</th>
+                <th>持有股數</th>
+                <th>平均成本</th>
+                <th>目前市價</th>
+                <th>預估市值</th>
+                <th>損益狀況</th>
+            </tr>
+        </thead>
+        <tbody id="stock-list">
+            </tbody>
+    </table>
 </div>
 
 <script>
-    let currentRates = { EUR: 34.5, JPY: 0.21, USD: 31.5 };
-    let expenses = [];
-    let myChart;
-    let netGlobal = 0;
+    // 1. 設定帳戶資料 (4個一般 + 1個股票)
+    const accounts = [
+        { name: "薪轉帳戶", balance: 50000, type: "cash" },
+        { name: "生活開支", balance: 12000, type: "cash" },
+        { name: "緊急預備金", balance: 100000, type: "cash" },
+        { name: "海外儲蓄", balance: 3500, type: "cash" }, // 假設美金
+        { name: "證券交割戶", balance: 8500, type: "stock_cash" } 
+    ];
 
-    function calculateAll() {
-        const b1 = parseFloat(document.getElementById('bank1').value) || 0;
-        const b2 = parseFloat(document.getElementById('bank2').value) || 0;
-        const b3 = parseFloat(document.getElementById('bank3').value) || 0;
-        const forex = parseFloat(document.getElementById('forex-bal').value) || 0;
-        const currType = document.getElementById('currency-type').value;
-        const gross = b1 + b2 + b3 + (forex * currentRates[currType]);
-        const totalExp = expenses.reduce((s, i) => s + i.amt, 0);
-        netGlobal = gross - totalExp;
-        
-        document.getElementById('total-val').innerText = 'NT$ ' + netGlobal.toLocaleString();
-        const rentP = netGlobal > 0 ? ((6500 / netGlobal) * 100).toFixed(1) : 0;
-        document.getElementById('rent-info').innerText = `房租 $6,500 | 佔淨資產 ${rentP}%`;
+    // 2. 設定股票庫存
+    const stocks = [
+        { code: "2330 台積電", shares: 500, cost: 620, currentPrice: 780 },
+        { code: "AAPL", shares: 10, cost: 175, currentPrice: 190 },
+        { code: "0050 元大台灣50", shares: 1000, cost: 135, currentPrice: 158 }
+    ];
 
-        // 更新翻倍目標邏輯 (以 20 萬為基準或目前資產的 2 倍)
-        const targetGoal = 200000; // 你設定的基準目標
-        const flipGoal = targetGoal * 2;
-        document.getElementById('target-goal-text').innerText = flipGoal.toLocaleString();
-        
-        const progress = Math.min(100, (netGlobal / flipGoal) * 100).toFixed(1);
-        document.getElementById('target-percent').innerText = progress + '%';
-        document.getElementById('target-diff').innerText = `還差 $${Math.max(0, flipGoal - netGlobal).toLocaleString()}`;
-        
-        // 戰略建議
-        const advice = document.getElementById('target-advice-text');
-        if (netGlobal < targetGoal) {
-            advice.innerHTML = "<b>階段 1：原始積累。</b><br>重點在於『主動收入』。利用你的貼紙生意賺取每筆 150 元的利潤。這筆錢不要亂花，扣掉房租後全部投入 0056。";
-        } else if (netGlobal < flipGoal) {
-            advice.innerHTML = "<b>階段 2：複利加速。</b><br>目前資產已達標。建議將 50% 放入 00981 (日本領航) 或 0050，利用市場波動與配置縮短翻倍時間。繼續保持每日開銷監控。";
-        } else {
-            advice.innerHTML = "<b>階段 3：資產重組。</b><br>恭喜翻倍！現在應重新設定目標。建議將部分資金轉入外幣避險，或尋找下一波樂高稀缺貨源。";
-        }
+    function updateUI() {
+        const accountContainer = document.getElementById('account-display');
+        const stockContainer = document.getElementById('stock-list');
+        let totalStockMarketValue = 0;
 
-        if (myChart) {
-            const invest = Math.max(0, netGlobal - 6500);
-            myChart.data.datasets[0].data = [6500, invest * 0.5, invest * 0.3, invest * 0.2];
-            myChart.update();
-        }
-        localStorage.setItem('cmd_flip_data', JSON.stringify({b1, b2, b3, forex, currType, expenses}));
+        // 計算股票市值
+        stockContainer.innerHTML = "";
+        stocks.forEach(s => {
+            const marketValue = s.shares * s.currentPrice;
+            const profit = (s.currentPrice - s.cost) * s.shares;
+            const profitPct = (((s.currentPrice / s.cost) - 1) * 100).toFixed(2);
+            totalStockMarketValue += marketValue;
+
+            stockContainer.innerHTML += `
+                <tr>
+                    <td>**${s.code}**</td>
+                    <td>${s.shares}</td>
+                    <td>$${s.cost}</td>
+                    <td>$${s.currentPrice}</td>
+                    <td>$${marketValue.toLocaleString()}</td>
+                    <td class="${profit >= 0 ? 'positive' : 'negative'}">
+                        ${profit >= 0 ? '+' : ''}${profit.toLocaleString()} (${profitPct}%)
+                    </td>
+                </tr>
+            `;
+        });
+
+        // 渲染帳戶卡片
+        accountContainer.innerHTML = "";
+        accounts.forEach(acc => {
+            let displayBalance = acc.balance;
+            let extraClass = "";
+            
+            // 如果是股票帳戶，顯示 (現金 + 股票市值)
+            if (acc.type === "stock_cash") {
+                displayBalance = acc.balance + totalStockMarketValue;
+                extraClass = "stock-account";
+            }
+
+            accountContainer.innerHTML += `
+                <div class="card ${extraClass}">
+                    <h3>${acc.name}</h3>
+                    <div class="balance">$${displayBalance.toLocaleString()}</div>
+                    ${acc.type === 'stock_cash' ? '<small style="color:gray">含股票市值</small>' : ''}
+                </div>
+            `;
+        });
     }
 
-    function addExpense() {
-        const name = document.getElementById('exp-name').value;
-        const amt = parseFloat(document.getElementById('exp-amt').value);
-        if (name && amt) {
-            expenses.unshift({name, amt, time: new Date().toLocaleTimeString()});
-            document.getElementById('exp-name').value = ''; document.getElementById('exp-amt').value = '';
-            renderExpenses(); calculateAll();
-        }
-    }
-    function renderExpenses() {
-        document.getElementById('exp-list').innerHTML = expenses.map((i, idx) => `
-            <div class="exp-item"><span>${i.name}</span><b>$${i.amt} <span onclick="removeExp(${idx})" style="color:red;cursor:pointer">×</span></b></div>
-        `).join('');
-    }
-    function removeExp(i) { expenses.splice(i, 1); renderExpenses(); calculateAll(); }
-
-    function searchStock() {
-        const s = document.getElementById('stock-search').value.toUpperCase();
-        const box = document.getElementById('stock-advice');
-        box.style.display = s ? 'block' : 'none';
-        const db = { '0056': '0056：穩定配息，資產翻倍的防守墊。', '00981': '00981：日股動能強，是加速翻倍的進攻標的。', '0050': '0050：台股基石。' };
-        box.innerHTML = db[s] || `分析中...`;
-    }
-
-    function analyzeSales() {
-        const desc = document.getElementById('product-desc').value;
-        const cost = parseFloat(document.getElementById('cost-input').value) || 0;
-        const price = parseFloat(document.getElementById('target-price').value) || 0;
-        const box = document.getElementById('sales-result');
-        if (!desc && !cost && !price) { box.style.display = 'none'; return; }
-        box.style.display = 'block';
-        box.innerHTML = `獲利：$${price-cost} | 這是你邁向翻倍計畫的微小推進。`;
-    }
-
-    async function fetchNews() {
-        try {
-            const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://tw.news.yahoo.com/rss/finance');
-            const data = await res.json();
-            document.getElementById('news-container').innerHTML = data.items.slice(0, 8).map(i => `<div class="news-item"><a href="${i.link}" target="_blank">${i.title}</a></div>`).join('');
-        } catch (e) {}
-    }
-
-    window.onload = function() {
-        const ctx = document.getElementById('allocationChart').getContext('2d');
-        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['房租', '投資', '獵貨', '剩餘'], datasets: [{ data: [6500, 0, 0, 0], backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } } });
-        const saved = JSON.parse(localStorage.getItem('cmd_flip_data') || '{}');
-        document.getElementById('bank1').value = saved.b1 || '';
-        document.getElementById('bank2').value = saved.b2 || '';
-        document.getElementById('bank3').value = saved.b3 || '';
-        document.getElementById('forex-bal').value = saved.forex || '';
-        document.getElementById('currency-type').value = saved.currType || 'EUR';
-        expenses = saved.expenses || [];
-        renderExpenses(); calculateAll(); fetchNews();
-    };
+    updateUI();
 </script>
+
 </body>
 </html>
